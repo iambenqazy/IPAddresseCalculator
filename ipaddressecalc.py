@@ -28,7 +28,7 @@ class IPOctet:
         validated_ip_address = [int(number) for number in ip_list]
         return validated_ip_address
 
-    def network_bits_needed(self, number=20):
+    def network_bits_needed(self, number=10):
         """
         Steps Based on Networks needed
         1. Convert the number of networks that you need to binary <NB: It’s always best to subtract one from the
@@ -36,8 +36,12 @@ class IPOctet:
         """
         if number <= 1:
             return 0
-        network_bits_needed = len(bin(number - 1)[2:])
-        return network_bits_needed
+        input_bit = len(bin(number - 1)[2:])
+        remaining_bit = self.TOTAL_SUBNET_BIT - self.subnet_mask
+        host_bit = remaining_bit - input_bit
+        if host_bit <= 1:
+            raise ValueError("Invalid Network Number")
+        return input_bit
 
     def ip_class_name(self):
         """
@@ -88,10 +92,10 @@ class IPOctet:
         """
         if self.network_bits_needed() == 0:
             return 255
-        network_range = self.network_id()[1:]
-        broadcast_range = [ip_number - 1 for ip_number in network_range]
+        network_id_range = self.network_id()[1:]
+        broadcast_id_range = [ip_number - 1 for ip_number in network_id_range]
 
-        return broadcast_range
+        return broadcast_id_range
 
     def host_id(self):
         """
@@ -141,17 +145,20 @@ if __name__ == '__main__':
     ip = IPOctet('192.158.45.8')
     host_ip_range = ip.host_id()
     len_of_host = len(range(host_ip_range[0][0], host_ip_range[0][1])) + 1
-    network_range = ip.network_id()[:-1]
-    len_of_network = len(network_range)
-    print(host_ip_range)
-    if isinstance(ip.network_id(), int):
-        print(ip.network_id())
+    if isinstance(ip.network_id(), int) and isinstance(ip.broadcast_id(), int):
+        network_range = [ip.network_id()]
+        broadcast_range = [ip.broadcast_id()]
     else:
-        print(network_range)
-    print(ip.broadcast_id())
+        network_range = ip.network_id()[:-1]
+        broadcast_range = ip.broadcast_id()
+    len_of_network = len(network_range)
+    network_map = list(zip(network_range, broadcast_range))
+    print(host_ip_range)
+    print(network_map)
+
     print(f"This is a {ip.ip_class_name()} address and there are {len_of_network} networks with {len_of_host} "
           f"valid host ip addresses per network.")
-    #
+
     # for index in range(0, len(ip.network_id())):
     #     print(f"Network {index + 1}: ")
     #     print(f"The network address is {ip.join_ip_address()}.{ip.network_id()[index]}")
