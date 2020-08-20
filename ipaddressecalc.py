@@ -104,12 +104,29 @@ class IPOctet:
         elif address in octet_range[240:]:
             return "Class E"
 
-    def subnetmask_cidr_conversion(self):
+    def subnetmask_cidr_conversion(self, subnet_bit):
         """
         This convert subnetmask id from cidr to decimal notation and vice versa
         :return:
         """
-        pass
+        bit_value = self.bintodec_list
+        subnet_list = []
+        if not 8 <= subnet_bit <= 32:
+            raise ValueError("Invalid Subnet Address")
+        for octet in range(0, 4):
+            if not subnet_bit < 8:
+                subnet_list.insert(octet, sum(bit_value))
+                subnet_bit -= 8
+            elif not subnet_bit == 0:
+                subnet_list.insert(octet, sum(bit_value[:subnet_bit]))
+                subnet_bit -= subnet_bit
+            else:
+                subnet_list.insert(octet, subnet_bit)
+
+        if len(subnet_list) == 4:
+            return subnet_list
+        else:
+            return []
 
     def network_increment_number(self):
         increment_position = (self.validate_subnetmask() + self.network_bits_needed()) % 8
@@ -198,8 +215,9 @@ class IPOctet:
 
 
 if __name__ == '__main__':
-    ip = IPOctet('192.168.8.8', '/27')
+    ip = IPOctet('192.168.8.8', '/22')
     host_ip_range = ip.host_id()
+    subnet_bit_value = ip.subnet_number_needed()
     len_of_host = len(range(host_ip_range[0][0], host_ip_range[0][1])) + 1
     if isinstance(ip.network_id(), int) and isinstance(ip.broadcast_id(), int):
         network_range = [ip.network_id()]
@@ -213,7 +231,8 @@ if __name__ == '__main__':
     print(f"Network and Broadcast ID range: {network_map}")
 
     print(f"This is a {ip.ip_class_name()} address and there are {len_of_network} networks with {len_of_host} "
-          f"valid host ip addresses per network and a subnet mask of /{ip.subnet_number_needed()}")
+          f"valid host ip addresses per network and a subnet mask of /{subnet_bit_value}"
+          f" or {'.'.join(map(str, ip.subnetmask_cidr_conversion(subnet_bit_value)))}")
 
     # for index in range(0, len(ip.network_id())):
     #     print(f"Network {index + 1}: ")
